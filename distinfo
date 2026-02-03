@@ -1,0 +1,14 @@
+--------------------------------------------
+-- generated with dist/build-distinfo.rua --
+--------------------------------------------
+
+name = "url"
+files = {
+	"README.md",
+	"test.lua",
+	"unfacebook.lua",
+	"url.lua",
+}
+deps = {
+	"ext",
+}
