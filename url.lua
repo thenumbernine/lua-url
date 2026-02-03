@@ -33,7 +33,7 @@ local function unescape(s)
 	end))
 end
 
-local function parseKV(kvstr)
+local function parseArgs(kvstr)
 	-- also return in-order list
 	local kvs = table()
 	for _,kv in ipairs(string.split(kvstr, '&')) do
@@ -59,7 +59,7 @@ this way you can pass it either pairs for quick Lua handling
 or ipairs if you care about the order
 --]]
 local escapekeychars = "!#$&'()*+,:;=?@%"	-- key doesn't need /[] escaped ...
-local function tostringKVs(t)
+local function argsToStr(t)
 	t = table(t):setmetatable(nil)
 	local s = table()
 	local sep
@@ -91,7 +91,7 @@ local URL = class()
 
 URL.escape = escape
 URL.unescape = unescape
-URL.tostringKVs = tostringKVs
+URL.argsToStr = argsToStr
 
 --[[
 args as a string parses the fields.
@@ -153,8 +153,8 @@ function URL:init(args)
 			prevrest = rest or prevrest
 			self.path = prevrest
 
-			if self.query then self.query = parseKV(self.query) end
-			if self.params then self.params = parseKV(self.params) end
+			if self.query then self.query = parseArgs(self.query) end
+			if self.params then self.params = parseArgs(self.params) end
 		end
 
 	elseif type(args) == 'table' then
@@ -190,11 +190,11 @@ function URL:__tostring()
 	end
 	if self.params then
 		s:insert';'
-		s:insert(tostringKVs(self.params))
+		s:insert(argsToStr(self.params))
 	end
 	if self.query then
 		s:insert'?'
-		s:insert(tostringKVs(self.query))
+		s:insert(argsToStr(self.query))
 	end
 	if self.fragment then
 		s:insert'#'
