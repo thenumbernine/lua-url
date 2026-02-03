@@ -158,7 +158,7 @@ function URL:__tostring()
 		for _,q in ipairs(self.params) do
 			s:insert(sep)
 			sep = '&'
-			s:insert(escape(q[1], "!#$&'()*+,/:;=?@%"))	-- key doesn't need [] escaped ...
+			s:insert(escape(q[1], "!#$&'()*+,:;=?@%"))	-- key doesn't need /[] escaped ...
 			s:insert'='
 			s:insert(escape(q[2]))
 		end
@@ -169,7 +169,7 @@ function URL:__tostring()
 		for _,q in ipairs(self.query) do
 			s:insert(sep)
 			sep = '&'
-			s:insert(escape(q[1], "!#$&'()*+,/:;=?@%"))	-- key doesn't need [] escaped ...
+			s:insert(escape(q[1], "!#$&'()*+,:;=?@%"))	-- key doesn't need /[] escaped ...
 			s:insert'='
 			s:insert(escape(q[2]))
 		end
