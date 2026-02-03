@@ -9,11 +9,11 @@ local string = require 'ext.string'
 local defaultescapechars = "!#$&'()*+,/:;=?@[]%"
 local escapecharsets = {}
 local function escape(s, escapechars)
-	escapechars = escapechars or defaultescapechars 
+	escapechars = escapechars or defaultescapechars
 	local escapecharset = escapecharsets[escapechars]
 	if not escapecharset then
 		escapecharset = string.split(escapechars):mapi(function(ch) return true, ch end):setmetatable(nil)
-		escapecharsets[escapechars] = escapecharset 
+		escapecharsets[escapechars] = escapecharset
 	end
 	return (s:gsub('.', function(ch)
 		if escapecharset[ch] then
@@ -51,10 +51,47 @@ local function parseKV(kvstr)
 	return kvs
 end
 
+--[[
+'t' handles *BOTH* pairs k=v and ipairs {k,v}
+first it processes ipairs
+then it processes all pairs that are non-integer keys
+this way you can pass it either pairs for quick Lua handling
+or ipairs if you care about the order
+--]]
+local escapekeychars = "!#$&'()*+,:;=?@%"	-- key doesn't need /[] escaped ...
+local function tostringKVs(t)
+	t = table(t):setmetatable(nil)
+	local s = table()
+	local sep
+	for i=1,#t do
+		local kv = t[i]
+		-- TODO still, what to do for key without value?
+		local k,v = tostring(kv[1]), tostring(kv[2])
+		if sep then s:insert(sep) end
+		sep = '&'
+		s:insert(escape(k, escapekeychars))
+		s:insert'='
+		s:insert(escape(v))
+		-- clear as you go
+		t[i] = nil
+		t[k] = nil
+	end
+	-- process whats left of ipairs
+	for k,v in pairs(t) do
+		if sep then s:insert(sep) end
+		sep = '&'
+		s:insert(escape(tostring(k), escapekeychars))
+		s:insert'='
+		s:insert(escape(tostring(v)))
+	end
+	return s:concat()
+end
+
 local URL = class()
 
 URL.escape = escape
 URL.unescape = unescape
+URL.tostringKVs = tostringKVs
 
 --[[
 args as a string parses the fields.
@@ -76,8 +113,8 @@ fields are:
 function URL:init(args)
 	if type(args) == 'string' then
 		local url = args
-		
-		-- <scheme>://<username>:<password>@<host>:<port>/<path>;<parameters>?<query>#<fragment>	
+
+		-- <scheme>://<username>:<password>@<host>:<port>/<path>;<parameters>?<query>#<fragment>
 		-- [<scheme>://][<username>[:<password>]@]<host>[:<port>][/<path>][;<parameters>][?<query>][#<fragment>]
 
 		-- parse scheme
@@ -98,7 +135,7 @@ function URL:init(args)
 		else
 			hostandport = authority
 		end
-		
+
 		local host, port = hostandport:match'^([^:]+):(.*)$'
 		host = host or hostandport
 		self.host = host
@@ -115,7 +152,7 @@ function URL:init(args)
 			rest, self.params = prevrest:match'^([^;]+);(.*)$'
 			prevrest = rest or prevrest
 			self.path = prevrest
-		
+
 			if self.query then self.query = parseKV(self.query) end
 			if self.params then self.params = parseKV(self.params) end
 		end
@@ -153,25 +190,11 @@ function URL:__tostring()
 	end
 	if self.params then
 		s:insert';'
-		local sep
-		for _,q in ipairs(self.params) do
-			s:insert(sep)
-			sep = '&'
-			s:insert(escape(q[1], "!#$&'()*+,:;=?@%"))	-- key doesn't need /[] escaped ...
-			s:insert'='
-			s:insert(escape(q[2]))
-		end
+		s:insert(tostringKVs(self.params))
 	end
 	if self.query then
 		s:insert'?'
-		local sep
-		for _,q in ipairs(self.query) do
-			s:insert(sep)
-			sep = '&'
-			s:insert(escape(q[1], "!#$&'()*+,:;=?@%"))	-- key doesn't need /[] escaped ...
-			s:insert'='
-			s:insert(escape(q[2]))
-		end
+		s:insert(tostringKVs(self.query))
 	end
 	if self.fragment then
 		s:insert'#'
@@ -179,5 +202,8 @@ function URL:__tostring()
 	end
 	return s:concat()
 end
+
+-- shorthand
+URL.tostring = URL.__tostring
 
 return URL

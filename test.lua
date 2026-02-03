@@ -15,3 +15,6 @@ print(tolua(URL'abc.com/def/ghi'))
 print(tolua(URL'abc.com/def/ghi?jkl'))
 print(tolua(URL'abc.com/def/ghi;jkl'))
 print(tolua(URL'abc.com/def/ghi#jkl'))
+
+print(URL{scheme='http', host='abc.com', query={k='v'}})
+print(URL{scheme='http', host='abc.com', query={{'k','v'}}})
