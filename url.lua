@@ -38,8 +38,9 @@ local function parseKV(kvstr)
 	local kvs = table()
 	for _,kv in ipairs(string.split(kvstr, '&')) do
 		local k,v = kv:match'^([^=]+)=(.*)$'
+
 		-- what if there's no "=" ? then what?
-		if not k then k,v = kv, true end
+		if not k then k,v = kv, '' end
 
 		k = unescape(k) or k
 		v = unescape(v) or v
@@ -52,23 +53,25 @@ end
 
 local URL = class()
 
+URL.escape = escape
+URL.unescape = unescape
 
 --[[
-args-from-url
+args as a string parses the fields.
+args as a table copies the fields.
 
-args-from-table
-	url = string,
-	scheme = string,
-	authority = string,
-	path = string,
-	params = string,
-	query = string,
-	fragment = string,
-	userinfo = string,
-	host = string,
-	port = string,
-	user = string,
-	password = string
+fields are:
+	scheme
+	host
+	user
+	pass
+	port
+	path
+	params
+	query
+	fragment
+
+	userinfo
 --]]
 function URL:init(args)
 	if type(args) == 'string' then
@@ -78,26 +81,22 @@ function URL:init(args)
 		-- [<scheme>://][<username>[:<password>]@]<host>[:<port>][/<path>][;<parameters>][?<query>][#<fragment>]
 
 		-- parse scheme
-		local scheme, rest = args:match'^([^:]+)://(.*)$'
-		if not scheme then
-			rest = url
-		end
+		local scheme, rest = url:match'^([^:]+)://(.*)$'
+		rest = rest or url
 		self.scheme = scheme
 
-		-- parse user+host vs path+query+params+fragment
-		local userandhost, pathqueryparamsfragment = rest:match'^([^/;?#]+)[/;?#](.*)$'	-- expect host to end at /;?#
-		userandhost = userandhost or rest
+		-- parse authority vs path+query+params+fragment
+		local authority, pathqueryparamsfragment = rest:match'^([^/;?#]+)[/;?#](.*)$'	-- expect host to end at /;?#
+		authority = authority or rest
 
-		local userandpass, hostandport = userandhost:match'^([^@]+)@(.*)$'
-		if userandpass then
-			local user, pass = userandpass:match'^([^:]*):(.*)$'
-			if not user then
-				user = userandpass
-			end
+		local userinfo, hostandport = authority:match'^([^@]+)@(.*)$'
+		if userinfo then
+			local user, pass = userinfo:match'^([^:]*):(.*)$'
+			user = user or userinfo
 			self.user = user
 			self.pass = pass
 		else
-			hostandport = userandhost
+			hostandport = authority
 		end
 		
 		local host, port = hostandport:match'^([^:]+):(.*)$'
