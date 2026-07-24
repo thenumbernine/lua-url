@@ -33,24 +33,6 @@ local function unescape(s)
 	end))
 end
 
-local function parseArgs(kvstr)
-	-- also return in-order list
-	local kvs = table()
-	for _,kv in ipairs(string.split(kvstr, '&')) do
-		local k,v = kv:match'^([^=]+)=(.*)$'
-
-		-- what if there's no "=" ? then what?
-		if not k then k,v = kv, '' end
-
-		k = unescape(k) or k
-		v = unescape(v) or v
-
-		kvs:insert{k, v}
-		kvs[k] = v
-	end
-	return kvs
-end
-
 --[[
 't' handles *BOTH* pairs k=v and ipairs {k,v}
 first it processes ipairs
@@ -153,8 +135,8 @@ function URL:init(args)
 			prevrest = rest or prevrest
 			self.path = prevrest
 
-			if self.query then self.query = parseArgs(self.query) end
-			if self.params then self.params = parseArgs(self.params) end
+			if self.query then self.query = URL.parseArgs(self.query) end
+			if self.params then self.params = URL.parseArgs(self.params) end
 		end
 
 	elseif type(args) == 'table' then
@@ -163,6 +145,24 @@ function URL:init(args)
 	else
 		error("idk how to build a URL from this")
 	end
+end
+
+function URL.parseArgs(kvstr)
+	-- also return in-order list
+	local kvs = table()
+	for _,kv in ipairs(string.split(kvstr, '&')) do
+		local k,v = kv:match'^([^=]+)=(.*)$'
+
+		-- what if there's no "=" ? then what?
+		if not k then k,v = kv, '' end
+
+		k = unescape(k) or k
+		v = unescape(v) or v
+
+		kvs:insert{k, v}
+		kvs[k] = v
+	end
+	return kvs
 end
 
 URL.__concat = string.concat
