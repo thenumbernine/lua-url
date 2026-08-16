@@ -3,8 +3,11 @@
 --------------------------------------------
 
 name = "url"
+git = "https://github.com/thenumbernine/lua-url"
+
 files = {
 	"README.md",
+	"distinfo",
 	"test.lua",
 	"unfacebook.lua",
 	"url.lua",
